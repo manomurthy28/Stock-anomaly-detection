@@ -1,0 +1,59 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Stock {
+  id        Int       @id @default(autoincrement())
+  symbol    String    @unique
+  name      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  anomalies Anomaly[]
+
+  @@index([symbol])
+}
+
+model Anomaly {
+  id               Int      @id @default(autoincrement())
+  stockId          Int
+  stock            Stock    @relation(fields: [stockId], references: [id])
+  date             DateTime
+  index            Int
+  price            Float
+  detectedBy       String   // "isolationForest", "lstm", or "both"
+  confidence       Float?
+  createdAt        DateTime @default(now())
+  
+  @@index([stockId, date])
+  @@index([detectedBy])
+}
+
+model SystemEvent {
+  id        Int      @id @default(autoincrement())
+  type      String   // "info", "warning", "error"
+  message   String
+  details   String?  @db.Text
+  createdAt DateTime @default(now())
+  
+  @@index([type])
+  @@index([createdAt])
+}
+
+model UserAction {
+  id        Int      @id @default(autoincrement())
+  action    String   // "search", "view_anomaly", "export", etc.
+  details   String?  @db.Text
+  userId    String?  // For future authentication
+  createdAt DateTime @default(now())
+  
+  @@index([action])
+  @@index([createdAt])
+}
